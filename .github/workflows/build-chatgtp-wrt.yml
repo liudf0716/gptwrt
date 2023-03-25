@@ -14,11 +14,12 @@ on:
 # the input is to choose the target platform
 # the default value is r7800
 # the value can be r7800 or x86
-inputs:
-  target:
-    description: 'target platform'
-    required: true
-    default: 'r7800'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'target platform'
+        required: true
+        default: 'r7800'
 
 jobs:
     build:
@@ -26,7 +27,7 @@ jobs:
         steps:
         - uses: actions/checkout@v2
         - name: prepare build openwrt
-            run: |
+          run: |
             sudo apt-get update
             sudo apt-get install -y build-essential libncurses5-dev gawk git subversion libssl-dev gettext unzip file
             git clone https://github.com/liudf0716/openwrt.git
@@ -64,7 +65,7 @@ jobs:
             ./scripts/feeds install -a
 
         - name: build openwrt
-            run: |
+          run: |
             # get current directory and store it in a variable
             CUR_DIR=$(pwd)
             # make directory to store the firmware
@@ -95,8 +96,8 @@ jobs:
             fi
 
         - name: upload firmware to github releases
-            uses: svenstaro/upload-release-action@v2
-            with:
+          uses: svenstaro/upload-release-action@v2
+          with:
             repo_token: ${{ secrets.GITHUB_TOKEN }}
             file: firmware/*
             tag: ${{ github.ref }}

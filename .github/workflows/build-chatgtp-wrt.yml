@@ -1,0 +1,106 @@
+# write a github action file by liudengfeng <
+# the action is to compile openwrt and push to github
+name: build chatgpt-wrt firmware and push the firmware to github releases
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# add a input to github action
+# the input is to choose the target platform
+# the default value is r7800
+# the value can be r7800 or x86
+inputs:
+  target:
+    description: 'target platform'
+    required: true
+    default: 'r7800'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+        - name: prepare build openwrt
+            run: |
+            sudo apt-get update
+            sudo apt-get install -y build-essential libncurses5-dev gawk git subversion libssl-dev gettext unzip file
+            git clone https://github.com/liudf0716/openwrt.git
+            git clone https://github.com/liudf0716/packages.git
+            git clone https://github.com/liudf0716/luci.git
+            cd packages
+            git checkout chatgpt
+            cd ..
+            cd luci
+            git checkout chatgpt
+            cd ..
+            # get current directory and store it in a variable
+            CUR_DIR=$(pwd)
+            # touch a file named feeds.conf.default
+            touch feeds.conf.default
+            # add the following content to the file
+            echo "src-link packages $CUR_DIR/packages" >> feeds.conf.default
+            echo "src-link luci $CUR_DIR/luci" >> feeds.conf.default
+            cd openwrt
+            git checkout chatgpt
+            # replace the feeds.conf.default file with the content of the file in the current directory
+            cp $CUR_DIR/feeds.conf.default feeds.conf.default
+            # cp config.r7800 file in this project to .config 
+            # if github action's input is r7800, then cp config.r7800 to .config
+            # if github action's input is x86, then cp config.x86 to .config
+            if [ ${{ github.event.inputs.target }} == "r7800" ]; then
+                cp $CUR_DIR/config.r7800 .config
+            elif [ ${{ github.event.inputs.target }} == "x86" ]; then
+                cp $CUR_DIR/config.x86 .config
+            fi
+            # make defconfig
+            make defconfig
+            # update feeds
+            ./scripts/feeds update -a
+            ./scripts/feeds install -a
+
+        - name: build openwrt
+            run: |
+            # get current directory and store it in a variable
+            CUR_DIR=$(pwd)
+            # make directory to store the firmware
+            mkdir -p $CUR_DIR/firmware
+            # set CUR_DIR = $CUR_DIR/firmware
+            CUR_DIR=$CUR_DIR/firmware
+            cd openwrt
+            # build openwrt
+            make -j$(($(nproc) + 1)) V=s
+            # if compile failed, then exit
+            if [ $? -ne 0 ]; then
+                echo "compile failed"
+                exit 1
+            fi
+            # if github action's input is r7800, then copy the firmware to the current directory
+            if [ ${{ github.event.inputs.target }} == "r7800" ]; then
+                cp bin/targets/ipq806x/generic/*.factory.img $CUR_DIR
+                cp bin/targets/ipq806x/generic/*.sysupgrade.bin $CUR_DIR
+            # if github action's input is x86, then copy the firmware to the current directory
+            elif [ ${{ github.event.inputs.target }} == "x86" ]; then
+                cp bin/targets/x86/64/*.iso $CUR_DIR
+                cp bin/targets/x86/64/*.img.gz $CUR_DIR
+                cp bin/targets/x86/64/*.img $CUR_DIR
+                cp bin/targets/x86/64/*.trx $CUR_DIR
+                cp bin/targets/x86/64/*.vdi $CUR_DIR
+                cp bin/targets/x86/64/*.vmdk $CUR_DIR
+                cp bin/targets/x86/64/*.vhd $CUR_DIR
+            fi
+
+        - name: upload firmware to github releases
+            uses: svenstaro/upload-release-action@v2
+            with:
+            repo_token: ${{ secrets.GITHUB_TOKEN }}
+            file: firmware/*
+            tag: ${{ github.ref }}
+            overwrite: true
+            file_glob: true
+
+# write a github action file by liudengfeng <

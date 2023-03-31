@@ -19,7 +19,7 @@ on:
       target:
         description: 'target platform'
         required: true
-        default: 'r7800'
+        default: 'x86'
 
 jobs:
     build:
@@ -98,7 +98,7 @@ jobs:
         - name: upload firmware to github releases
           uses: svenstaro/upload-release-action@v2
           with:
-            repo_token: ${{ secrets.GITHUB_TOKEN }}
+            repo_token: ${{ secrets.CHATGTPWRT_KEY }}
             file: firmware/*
             tag: ${{ github.ref }}
             overwrite: true

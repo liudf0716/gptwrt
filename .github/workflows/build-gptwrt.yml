@@ -86,13 +86,7 @@ jobs:
                 cp bin/targets/ipq806x/generic/*.sysupgrade.bin $CUR_DIR
             # if github action's input is x86, then copy the firmware to the current directory
             elif [ ${{ github.event.inputs.target }} == "x86" ]; then
-                cp bin/targets/x86/64/*.iso $CUR_DIR
-                cp bin/targets/x86/64/*.img.gz $CUR_DIR
-                cp bin/targets/x86/64/*.img $CUR_DIR
-                cp bin/targets/x86/64/*.trx $CUR_DIR
-                cp bin/targets/x86/64/*.vdi $CUR_DIR
                 cp bin/targets/x86/64/*.vmdk $CUR_DIR
-                cp bin/targets/x86/64/*.vhd $CUR_DIR
             fi
 
         - name: upload firmware to github releases

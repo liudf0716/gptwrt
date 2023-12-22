@@ -92,7 +92,7 @@ jobs:
         - name: upload firmware to github releases
           uses: svenstaro/upload-release-action@v2
           with:
-            repo_token: ${{ secrets.GPT_KEY }}
+            repo_token: ${{ secrets.GPTWRT_KEY }}
             file: firmware/*
             tag: ${{ github.ref }}
             overwrite: true
